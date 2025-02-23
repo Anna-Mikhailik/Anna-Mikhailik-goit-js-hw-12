@@ -48,7 +48,8 @@ refs.form.addEventListener('submit', e => {
 });
 
 function renderValue(items) {
-  const markup = imagesTemplate(items);
+  const selectedImages = items.slice(0, 15); // Вибираємо перші 15 картинок
+  const markup = imagesTemplate(selectedImages);
   refs.container.insertAdjacentHTML('beforeend', markup);
 
   gallery.refresh();
