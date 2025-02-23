@@ -11,23 +11,21 @@ const refs = {
   container: document.querySelector('.gallery'),
   form: document.querySelector('.form'),
   loader: document.querySelector('.loader'),
-  loadMoreBtn: document.querySelector('.load-more'),
+  loadMoreBtn: document.querySelector('.load-more'), // Додаємо кнопку "Load more"
 };
 
 let searchQuery = '';
 let page = 1;
-const perPage = 40;
-let totalHits = 0;
-
-const gallery = new SimpleLightbox('.gallery a', {
+const perPage = 40; // Завантажувати 40 зображень за раз
+let gallery = new SimpleLightbox('.gallery a', {
   captionsData: 'alt',
   captionDelay: 250,
 });
 
-// Функція обробки форми пошуку
+// Подія на форму пошуку
 refs.form.addEventListener('submit', async e => {
   e.preventDefault();
-
+  
   searchQuery = e.target.elements.text.value.trim();
   if (!searchQuery) {
     iziToast.error({
@@ -38,27 +36,30 @@ refs.form.addEventListener('submit', async e => {
     return;
   }
 
+  // Очищуємо галерею та скидаємо сторінку
   refs.container.innerHTML = '';
-  refs.loadMoreBtn.classList.add('hidden');
-  refs.loader.classList.remove('hidden');
   page = 1;
 
-  try {
-    const response = await fetchImages(searchQuery, page, perPage);
-    totalHits = response.totalHits;
+  // Приховуємо кнопку "Load more"
+  refs.loadMoreBtn.classList.add('hidden');
+  refs.loader.classList.remove('hidden');
 
-    if (response.hits.length === 0) {
+  try {
+    const images = await fetchImages(searchQuery, page, perPage);
+
+    if (images.hits.length === 0) {
       iziToast.error({
         title: 'Error',
-        message: 'No images found. Try another query!',
+        message: 'No images found. Please try a different query!',
         position: 'topRight',
       });
       return;
     }
 
-    renderImages(response.hits);
+    renderValue(images.hits);
 
-    if (totalHits > perPage) {
+    // Якщо отримали менше 40 зображень, не показуємо кнопку "Load more"
+    if (images.hits.length === perPage) {
       refs.loadMoreBtn.classList.remove('hidden');
     }
   } catch (error) {
@@ -73,24 +74,29 @@ refs.form.addEventListener('submit', async e => {
   }
 });
 
-// Функція для завантаження додаткових зображень
+// Подія на кнопку "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
 
   try {
-    const response = await fetchImages(searchQuery, page, perPage);
+    const images = await fetchImages(searchQuery, page, perPage);
 
-    renderImages(response.hits);
-
-    const totalPages = Math.ceil(totalHits / perPage);
-    if (page >= totalPages) {
-      refs.loadMoreBtn.classList.add('hidden');
-      iziToast.info({
-        title: 'Info',
-        message: "We're sorry, but you've reached the end of search results.",
+    if (images.hits.length === 0) {
+      iziToast.error({
+        title: 'Error',
+        message: 'No more images found!',
         position: 'topRight',
       });
+      refs.loadMoreBtn.classList.add('hidden');
+      return;
+    }
+
+    renderValue(images.hits);
+
+    // Якщо завантажили менше 40 картинок, ховаємо кнопку
+    if (images.hits.length < perPage) {
+      refs.loadMoreBtn.classList.add('hidden');
     }
   } catch (error) {
     iziToast.error({
@@ -104,7 +110,8 @@ refs.loadMoreBtn.addEventListener('click', async () => {
 });
 
 // Функція рендеру картинок
-function renderImages(items) {
-  refs.container.insertAdjacentHTML('beforeend', imagesTemplate(items));
+function renderValue(items) {
+  const markup = imagesTemplate(items);
+  refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh();
 }
