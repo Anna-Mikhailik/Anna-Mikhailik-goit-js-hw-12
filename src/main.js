@@ -11,61 +11,43 @@ const refs = {
   container: document.querySelector('.gallery'),
   form: document.querySelector('.form'),
   loader: document.querySelector('.loader'),
-  loadMoreBtn: document.querySelector('.load-more'), // Додаємо кнопку "Load more"
+  loadMoreBtn: document.querySelector('.load-more'),
 };
 
-let searchQuery = '';
-let page = 1;
-const perPage = 40; // Завантажувати 40 зображень за раз
-let gallery = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-});
+let currentPage = 1;
+let currentQuery = '';
+let totalHits = 0;
 
-// Подія на форму пошуку
 refs.form.addEventListener('submit', async e => {
   e.preventDefault();
   
-  searchQuery = e.target.elements.text.value.trim();
-  if (!searchQuery) {
+  currentQuery = e.target.elements.text.value.trim();
+  if (!currentQuery) {
     iziToast.error({
       title: 'Error',
-      message: 'Please enter a search query!',
+      message: 'Something went wrong. Please try again later!',
       position: 'topRight',
     });
     return;
   }
 
-  // Очищуємо галерею та скидаємо сторінку
   refs.container.innerHTML = '';
-  page = 1;
-
-  // Приховуємо кнопку "Load more"
-  refs.loadMoreBtn.classList.add('hidden');
   refs.loader.classList.remove('hidden');
+  refs.loadMoreBtn.classList.add('hidden');
+  currentPage = 1;
 
   try {
-    const images = await fetchImages(searchQuery, page, perPage);
-
-    if (images.hits.length === 0) {
-      iziToast.error({
-        title: 'Error',
-        message: 'No images found. Please try a different query!',
-        position: 'topRight',
-      });
-      return;
-    }
-
-    renderValue(images.hits);
-
-    // Якщо отримали менше 40 зображень, не показуємо кнопку "Load more"
-    if (images.hits.length === perPage) {
+    const response = await fetchImages(currentQuery, currentPage);
+    totalHits = response.totalHits;
+    renderValue(response.hits);
+    
+    if (totalHits > 40) {
       refs.loadMoreBtn.classList.remove('hidden');
     }
   } catch (error) {
     iziToast.error({
       title: 'Error',
-      message: 'Something went wrong. Please try again later!',
+      message: 'Sorry, there are no images matching your search query. Please try again!',
       position: 'topRight',
     });
   } finally {
@@ -74,29 +56,22 @@ refs.form.addEventListener('submit', async e => {
   }
 });
 
-// Подія на кнопку "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
-  page += 1;
+  currentPage += 1;
   refs.loader.classList.remove('hidden');
 
   try {
-    const images = await fetchImages(searchQuery, page, perPage);
-
-    if (images.hits.length === 0) {
-      iziToast.error({
-        title: 'Error',
-        message: 'No more images found!',
+    const response = await fetchImages(currentQuery, currentPage);
+    renderValue(response.hits);
+    
+    const totalPages = Math.ceil(totalHits / 40);
+    if (currentPage >= totalPages) {
+      refs.loadMoreBtn.classList.add('hidden');
+      iziToast.info({
+        title: 'Info',
+        message: "We're sorry, but you've reached the end of search results.",
         position: 'topRight',
       });
-      refs.loadMoreBtn.classList.add('hidden');
-      return;
-    }
-
-    renderValue(images.hits);
-
-    // Якщо завантажили менше 40 картинок, ховаємо кнопку
-    if (images.hits.length < perPage) {
-      refs.loadMoreBtn.classList.add('hidden');
     }
   } catch (error) {
     iziToast.error({
@@ -109,9 +84,13 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   }
 });
 
-// Функція рендеру картинок
 function renderValue(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh();
 }
+
+const gallery = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
