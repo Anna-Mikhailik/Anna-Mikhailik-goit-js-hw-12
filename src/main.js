@@ -14,16 +14,8 @@ const refs = {
 
 let query = '';
 let page = 1;
-const perPage = 40; // Завантажуємо 40 зображень, але показуємо частинами
-let allImages = []; // Масив для збереження всіх отриманих картинок
-let shownImages = 0; // Лічильник показаних картинок
+const perPage = 40;
 
-const gallery = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-});
-
-// Обробник події для пошуку
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -37,37 +29,19 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  // Очистити попередні результати
   refs.container.innerHTML = '';
-  page = 1;
-  shownImages = 0;
-  allImages = [];
-  
   refs.loader.classList.remove('hidden');
   refs.loadMoreBtn.classList.add('hidden');
-
+  page = 1;
+  
   try {
-    const response = await fetchImages(query, page, perPage);
-    allImages = response.hits;
-
-    if (allImages.length === 0) {
-      iziToast.error({
-        title: 'Error',
-        message: 'No images found. Try again!',
-        position: 'topRight',
-      });
-      return;
-    }
-
-    renderNextImages();
-    
-    if (allImages.length > 20) {
-      refs.loadMoreBtn.classList.remove('hidden');
-    }
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
-      message: 'Something went wrong. Please try again later!',
+      message: 'No images found. Try again!',
       position: 'topRight',
     });
   } finally {
@@ -76,50 +50,34 @@ refs.form.addEventListener('submit', async (e) => {
   }
 });
 
-// Обробник кнопки "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
-  renderNextImages();
-  
-  if (shownImages >= allImages.length) {
-    page += 1;
-    refs.loader.classList.remove('hidden');
+  page += 1;
+  refs.loader.classList.remove('hidden');
 
-    try {
-      const response = await fetchImages(query, page, perPage);
-      allImages = response.hits;
-      shownImages = 0;
-
-      if (allImages.length === 0) {
-        refs.loadMoreBtn.classList.add('hidden');
-        iziToast.info({
-          title: 'Info',
-          message: "We're sorry, but you've reached the end of search results.",
-          position: 'topRight',
-        });
-      } else {
-        renderNextImages();
-      }
-    } catch (error) {
-      iziToast.error({
-        title: 'Error',
-        message: 'Error loading more images!',
-        position: 'topRight',
-      });
-    } finally {
-      refs.loader.classList.add('hidden');
-    }
+  try {
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length < perPage) refs.loadMoreBtn.classList.add('hidden');
+  } catch (error) {
+    iziToast.error({
+      title: 'Error',
+      message: 'Error loading more images!',
+      position: 'topRight',
+    });
+  } finally {
+    refs.loader.classList.add('hidden');
   }
 });
 
-// Функція для рендеру наступних 20 зображень
-function renderNextImages() {
-  const nextImages = allImages.slice(shownImages, shownImages + 20);
-  const markup = imagesTemplate(nextImages);
+function renderImages(items) {
+  const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh();
-  shownImages += 20;
+}
 
-  if (shownImages >= allImages.length) {
-    refs.loadMoreBtn.classList.add('hidden');
-  }
-}пш
+const gallery = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
+
+
