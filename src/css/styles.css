@@ -1,43 +1,184 @@
-/* Застосуйте стилі для галереї */
-.gallery-item {
-  margin-bottom: 20px;
+.loader {
+  font-size: 48px;
+  color: #000000;
+  display: inline-block;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  position: relative;
+}
+.loader:after {
+  content: 'Loading';
+  position: relative;
+  z-index: 5;
+}
+.loader:before {
+  content: '';
+  height: 6px;
+  border: 1px solid;
+  border-radius: 10px;
+  width: 100%;
+  position: absolute;
+  bottom: 0px;
+  background: linear-gradient(#ff3d00 100%, transparent 0) no-repeat;
+  background-size: 0% auto;
+  animation: 10s lineGrow linear infinite;
 }
 
-.gallery-link {
+@keyframes lineGrow {
+  to {
+    background-size: 100% auto;
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: currentColor;
+  text-decoration: none;
+}
+
+img {
   display: block;
-  position: relative;
+  max-width: 100%;
+  height: auto;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 32px;
+}
+
+.form {
+  margin-bottom: 20px;
+
+  > .input {
+    width: 240px;
+    padding: 7px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    border: 1px solid #808080;
+    border-radius: 4px;
+
+    &:hover {
+      border-color: rgb(50, 50, 50);
+    }
+  }
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  margin-left: 6px;
+  padding: 8px 16px;
+  width: auto;
+  height: 40px;
+  background: #4e75ff;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: #fff;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: #6c8cff;
+  }
+}
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  /* padding: 24px; */
+}
+
+.gallery-item {
+  width: 360px;
+  height: 260px;
+  background-color: #f6f0f0cd;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: all 0.3s;
+
+  &:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .gallery-image {
   width: 100%;
-  border-radius: 10px;
-  transition: transform 0.3s ease-in-out;
+  height: 200px;
+  object-fit: cover;
 }
 
-.gallery-image:hover {
-  transform: scale(1.05);
-}
+.desc {
+  height: 42px;
 
-/* Стилі для опису зображення */
-.desc-wraper {
-  list-style: none;
-  padding: 0;
-}
+  > .desc-wraper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
 
-.desc-item {
-  margin-bottom: 10px;
-}
+    > .desc-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-.loader {
-  display: none;
-}
+      > h3 {
+        font-family: cursive;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 1.33333;
+        letter-spacing: 0.04em;
+        color: #2e2f42;
 
-.load-more.hidden {
-  display: none;
-}
+        margin-top: 8px;
+      }
 
-/* Індикатор завантаження */
-.loader {
-  text-align: center;
+      > p {
+        font-family: sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 2;
+        letter-spacing: 0.04em;
+        color: #2e2f42;
+      }
+    }
+  }
 }
-
