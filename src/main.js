@@ -31,7 +31,7 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  refs.container.innerHTML = '';
+  refs.container.innerHTML = ''; // Очищаємо попередні результати
   refs.loader.classList.remove('hidden');
   refs.loadMoreBtn.classList.add('hidden');
   page = 1;
@@ -42,7 +42,7 @@ refs.form.addEventListener('submit', async (e) => {
     totalHits = hits;
     imagesBuffer = images;
     renderImages(imagesBuffer.slice(0, 20));
-    if (imagesBuffer.length > 20) refs.loadMoreBtn.classList.remove('hidden');
+    checkLoadMoreButtonVisibility();
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -60,23 +60,14 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   const remainingImages = imagesBuffer.slice(currentImagesCount, currentImagesCount + 20);
   renderImages(remainingImages);
 
-  if (refs.container.children.length >= imagesBuffer.length && refs.container.children.length < totalHits) {
+  if (refs.container.children.length < imagesBuffer.length) {
     page += 1;
     refs.loader.classList.remove('hidden');
     try {
       const { images } = await fetchImages(query, page, perPage);
       imagesBuffer = images;
       renderImages(imagesBuffer.slice(0, 20));
-      if (refs.container.children.length >= totalHits) {
-        refs.loadMoreBtn.classList.add('hidden');
-        iziToast.info({
-          title: 'Info',
-          message: "We're sorry, but you've reached the end of search results.",
-          position: 'topRight',
-        });
-      } else if (imagesBuffer.length > 20) {
-        refs.loadMoreBtn.classList.remove('hidden');
-      }
+      checkLoadMoreButtonVisibility();
     } catch (error) {
       iziToast.error({
         title: 'Error',
@@ -93,6 +84,21 @@ function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh();
+}
+
+function checkLoadMoreButtonVisibility() {
+  if (refs.container.children.length >= imagesBuffer.length) {
+    if (refs.container.children.length >= totalHits) {
+      refs.loadMoreBtn.classList.add('hidden');
+      iziToast.info({
+        title: 'Info',
+        message: "You've reached the end of the search results.",
+        position: 'topRight',
+      });
+    }
+  } else if (imagesBuffer.length > 20) {
+    refs.loadMoreBtn.classList.remove('hidden');
+  }
 }
 
 const gallery = new SimpleLightbox('.gallery a', {
