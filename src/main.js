@@ -16,6 +16,7 @@ let query = '';
 let page = 1;
 const perPage = 40;
 let imagesBuffer = [];
+let totalHits = 0;
 
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -37,7 +38,8 @@ refs.form.addEventListener('submit', async (e) => {
   imagesBuffer = [];
   
   try {
-    const images = await fetchImages(query, page, perPage);
+    const { images, totalHits: hits } = await fetchImages(query, page, perPage);
+    totalHits = hits;
     imagesBuffer = images;
     renderImages(imagesBuffer.slice(0, 20));
     if (imagesBuffer.length > 20) refs.loadMoreBtn.classList.remove('hidden');
@@ -61,11 +63,20 @@ refs.loadMoreBtn.addEventListener('click', async () => {
     page += 1;
     refs.loader.classList.remove('hidden');
     try {
-      const images = await fetchImages(query, page, perPage);
+      const { images, totalHits: hits } = await fetchImages(query, page, perPage);
+      totalHits = hits;
       imagesBuffer = images;
       renderImages(imagesBuffer.slice(0, 20));
-      if (imagesBuffer.length > 20) refs.loadMoreBtn.classList.remove('hidden');
-      else refs.loadMoreBtn.classList.add('hidden');
+      if (refs.container.children.length >= totalHits) {
+        refs.loadMoreBtn.classList.add('hidden');
+        iziToast.info({
+          title: 'Info',
+          message: "We're sorry, but you've reached the end of search results.",
+          position: 'topRight',
+        });
+      } else if (imagesBuffer.length > 20) {
+        refs.loadMoreBtn.classList.remove('hidden');
+      }
     } catch (error) {
       iziToast.error({
         title: 'Error',
