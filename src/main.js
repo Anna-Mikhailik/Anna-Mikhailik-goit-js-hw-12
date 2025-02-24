@@ -15,7 +15,7 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0; // Змінна для загальної кількості зображень
+let totalHits = 0; // Загальна кількість зображень
 
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
