@@ -30,22 +30,31 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  refs.container.innerHTML = '';
+  refs.container.innerHTML = ''; // очищаємо галерею перед новим пошуком
   refs.loader.classList.remove('hidden');
   refs.loadMoreBtn.classList.add('hidden');
   page = 1;
-  
+
   try {
     const data = await fetchImages(query, page);
     totalHits = data.totalHits;
-    renderImages(data.hits);
-    if (data.hits.length === perPage && totalHits > perPage) {
-      refs.loadMoreBtn.classList.remove('hidden');
+
+    if (data.hits.length === 0) {
+      iziToast.info({
+        title: 'No Results',
+        message: 'Sorry, no images found for your search.',
+        position: 'topRight',
+      });
+    } else {
+      renderImages(data.hits);
+      if (data.hits.length === perPage && totalHits > perPage) {
+        refs.loadMoreBtn.classList.remove('hidden');
+      }
     }
   } catch (error) {
     iziToast.error({
       title: 'Error',
-      message: 'No images found. Try again!',
+      message: 'Something went wrong. Please try again later!',
       position: 'topRight',
     });
   } finally {
@@ -60,18 +69,25 @@ refs.loadMoreBtn.addEventListener('click', async () => {
 
   try {
     const data = await fetchImages(query, page);
-    renderImages(data.hits);
-
-    if (data.hits.length < perPage || totalHits <= page * perPage) {
-      refs.loadMoreBtn.classList.add('hidden');
+    if (data.hits.length === 0) {
       iziToast.info({
         title: 'End of Results',
-        message: "We're sorry, but you've reached the end of search results.",
+        message: "You've reached the end of search results.",
         position: 'topRight',
       });
+      refs.loadMoreBtn.classList.add('hidden');
+    } else {
+      renderImages(data.hits);
+      if (data.hits.length < perPage || totalHits <= page * perPage) {
+        refs.loadMoreBtn.classList.add('hidden');
+        iziToast.info({
+          title: 'End of Results',
+          message: "We're sorry, but you've reached the end of search results.",
+          position: 'topRight',
+        });
+      }
+      smoothScroll(); // Плавне прокручування
     }
-    
-    smoothScroll(); // Плавне прокручування
   } catch (error) {
     iziToast.error({
       title: 'Error',
