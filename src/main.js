@@ -15,8 +15,6 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let imagesBuffer = [];
-let totalHits = 0;
 
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -31,18 +29,15 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  refs.container.innerHTML = ''; // Очищаємо попередні результати
+  refs.container.innerHTML = '';
   refs.loader.classList.remove('hidden');
   refs.loadMoreBtn.classList.add('hidden');
   page = 1;
-  imagesBuffer = [];
   
   try {
-    const { images, totalHits: hits } = await fetchImages(query, page, perPage);
-    totalHits = hits;
-    imagesBuffer = images;
-    renderImages(imagesBuffer.slice(0, 20));
-    checkLoadMoreButtonVisibility();
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -56,27 +51,21 @@ refs.form.addEventListener('submit', async (e) => {
 });
 
 refs.loadMoreBtn.addEventListener('click', async () => {
-  const currentImagesCount = refs.container.children.length;
-  const remainingImages = imagesBuffer.slice(currentImagesCount, currentImagesCount + 20);
-  renderImages(remainingImages);
+  page += 1;
+  refs.loader.classList.remove('hidden');
 
-  if (refs.container.children.length < imagesBuffer.length) {
-    page += 1;
-    refs.loader.classList.remove('hidden');
-    try {
-      const { images } = await fetchImages(query, page, perPage);
-      imagesBuffer = images;
-      renderImages(imagesBuffer.slice(0, 20));
-      checkLoadMoreButtonVisibility();
-    } catch (error) {
-      iziToast.error({
-        title: 'Error',
-        message: 'Error loading more images!',
-        position: 'topRight',
-      });
-    } finally {
-      refs.loader.classList.add('hidden');
-    }
+  try {
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length < perPage) refs.loadMoreBtn.classList.add('hidden');
+  } catch (error) {
+    iziToast.error({
+      title: 'Error',
+      message: 'Error loading more images!',
+      position: 'topRight',
+    });
+  } finally {
+    refs.loader.classList.add('hidden');
   }
 });
 
@@ -84,21 +73,6 @@ function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh();
-}
-
-function checkLoadMoreButtonVisibility() {
-  if (refs.container.children.length >= imagesBuffer.length) {
-    if (refs.container.children.length >= totalHits) {
-      refs.loadMoreBtn.classList.add('hidden');
-      iziToast.info({
-        title: 'Info',
-        message: "You've reached the end of the search results.",
-        position: 'topRight',
-      });
-    }
-  } else if (imagesBuffer.length > 20) {
-    refs.loadMoreBtn.classList.remove('hidden');
-  }
 }
 
 const gallery = new SimpleLightbox('.gallery a', {
