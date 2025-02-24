@@ -36,8 +36,19 @@ refs.form.addEventListener('submit', async (e) => {
   
   try {
     const images = await fetchImages(query, page, perPage);
-    renderImages(images);
-    if (images.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
+    
+    if (images.hits.length === 0) {
+      iziToast.error({
+        title: 'Error',
+        message: 'No images found. Try again!',
+        position: 'topRight',
+      });
+      return;
+    }
+
+    renderImages(images.hits);
+    
+    if (images.hits.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -56,8 +67,20 @@ refs.loadMoreBtn.addEventListener('click', async () => {
 
   try {
     const images = await fetchImages(query, page, perPage);
-    renderImages(images);
-    if (images.length < perPage) refs.loadMoreBtn.classList.add('hidden');
+
+    if (images.hits.length === 0) {
+      iziToast.error({
+        title: 'Info',
+        message: "We're sorry, but you've reached the end of search results.",
+        position: 'topRight',
+      });
+      refs.loadMoreBtn.classList.add('hidden');
+      return;
+    }
+
+    renderImages(images.hits);
+    
+    if (images.hits.length < perPage) refs.loadMoreBtn.classList.add('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
