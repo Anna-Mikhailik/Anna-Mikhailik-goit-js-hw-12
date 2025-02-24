@@ -15,7 +15,6 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0;
 
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -36,12 +35,9 @@ refs.form.addEventListener('submit', async (e) => {
   page = 1;
   
   try {
-    const data = await fetchImages(query, page);
-    totalHits = data.totalHits;
-    renderImages(data.hits);
-    if (data.hits.length === perPage && totalHits > perPage) {
-      refs.loadMoreBtn.classList.remove('hidden');
-    }
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -59,19 +55,9 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   refs.loader.classList.remove('hidden');
 
   try {
-    const data = await fetchImages(query, page);
-    renderImages(data.hits);
-
-    if (data.hits.length < perPage || totalHits <= page * perPage) {
-      refs.loadMoreBtn.classList.add('hidden');
-      iziToast.info({
-        title: 'End of Results',
-        message: "We're sorry, but you've reached the end of search results.",
-        position: 'topRight',
-      });
-    }
-    
-    smoothScroll(); // Плавне прокручування
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length < perPage) refs.loadMoreBtn.classList.add('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -93,11 +79,3 @@ const gallery = new SimpleLightbox('.gallery a', {
   captionsData: 'alt',
   captionDelay: 250,
 });
-
-function smoothScroll() {
-  const cardHeight = document.querySelector('.gallery-item').getBoundingClientRect().height;
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
-}
