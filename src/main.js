@@ -15,9 +15,9 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0; // Загальна кількість зображень
+let totalHits = 0;
 
-// Обробник події сабміту форми
+// 1️⃣ Обробник події сабміту форми
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -32,37 +32,60 @@ refs.form.addEventListener('submit', async (e) => {
   }
 
   refs.container.innerHTML = ''; // Очищення галереї
-  refs.loader.classList.remove('hidden');
+  refs.loader.classList.remove('hidden'); // Показуємо лоадер
   refs.loadMoreBtn.classList.add('hidden'); // Ховаємо кнопку завантаження
   page = 1;
 
   try {
     const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
+    
     totalHits = fetchedTotalHits; // Оновлення загальної кількості результатів
+    if (hits.length === 0) {
+      iziToast.error({
+        title: 'Error',
+        message: 'No images found. Try again!',
+        position: 'topRight',
+      });
+      return;
+    }
+
     renderImages(hits);
     checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
+
   } catch (error) {
     iziToast.error({
       title: 'Error',
-      message: 'No images found. Try again!',
+      message: 'Something went wrong. Try again later!',
       position: 'topRight',
     });
   } finally {
-    refs.loader.classList.add('hidden');
+    refs.loader.classList.add('hidden'); // Приховуємо лоадер
     e.target.reset();
   }
 });
 
-// Обробник кліку на кнопку "Load more"
+// 2️⃣ Обробник кліку на кнопку "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
 
   try {
     const { hits } = await fetchImages(query, page, perPage);
+
+    if (hits.length === 0) {
+      refs.loadMoreBtn.classList.add('hidden');
+      iziToast.info({
+        title: 'End of Results',
+        message: "We're sorry, but you've reached the end of search results.",
+        position: 'topRight',
+      });
+      return;
+    }
+
     renderImages(hits);
     checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
     smoothScrollToNextImages(); // Плавний скролінг
+
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -74,14 +97,14 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   }
 });
 
-// Функція рендерингу зображень
+// 3️⃣ Функція рендерингу зображень
 function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
   gallery.refresh(); // Оновлення SimpleLightbox
 }
 
-// Функція перевірки, чи потрібно показувати кнопку "Load more"
+// 4️⃣ Функція перевірки, чи потрібно показувати кнопку "Load more"
 function checkLoadMoreButtonVisibility() {
   const loadedImages = refs.container.querySelectorAll('.gallery-item').length;
 
@@ -97,7 +120,7 @@ function checkLoadMoreButtonVisibility() {
   }
 }
 
-// Функція для плавного скролінгу
+// 5️⃣ Функція для плавного скролінгу
 function smoothScrollToNextImages() {
   const galleryItem = refs.container.querySelector('.gallery-item');
   if (galleryItem) {
@@ -109,6 +132,7 @@ function smoothScrollToNextImages() {
   }
 }
 
+// 6️⃣ Налаштування SimpleLightbox
 const gallery = new SimpleLightbox('.gallery a', {
   captionsData: 'alt',
   captionDelay: 250,
