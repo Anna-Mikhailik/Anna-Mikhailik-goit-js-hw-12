@@ -15,102 +15,79 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0; // для збереження загальної кількості результатів
+let totalHits = 0;
 
-// Обробник для сабміту форми
+// Обробник сабміту форми
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
-
+  
   query = e.target.elements.text.value.trim();
   if (!query) {
-    iziToast.error({
-      title: 'Error',
-      message: 'Please enter a search query!',
-      position: 'topRight',
-    });
+    iziToast.error({ title: 'Error', message: 'Please enter a search query!', position: 'topRight' });
     return;
   }
 
-  refs.container.innerHTML = ''; // очищаємо галерею
+  refs.container.innerHTML = '';
   refs.loader.classList.remove('hidden');
-  refs.loadMoreBtn.classList.add('hidden'); // ховаємо кнопку завантаження
+  refs.loadMoreBtn.classList.add('hidden');
   page = 1;
 
   try {
     const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    totalHits = fetchedTotalHits; // зберігаємо загальну кількість результатів
+    totalHits = fetchedTotalHits;
     renderImages(hits);
-    checkLoadMoreButtonVisibility(); // перевірка кнопки "Load more"
+    checkLoadMoreButtonVisibility();
   } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      message: 'No images found. Try again!',
-      position: 'topRight',
-    });
+    iziToast.error({ title: 'Error', message: 'No images found. Try again!', position: 'topRight' });
   } finally {
     refs.loader.classList.add('hidden');
     e.target.reset();
   }
 });
 
-// Обробник для кліку по кнопці "Load more"
+// Обробник кнопки "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
 
   try {
-    const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    totalHits = fetchedTotalHits; // оновлюємо загальну кількість результатів
+    const { hits } = await fetchImages(query, page, perPage);
     renderImages(hits);
-    checkLoadMoreButtonVisibility(); // перевірка видимості кнопки "Load more"
-    smoothScrollToNextImages(); // Плавна прокрутка
+    checkLoadMoreButtonVisibility();
+    smoothScrollToNextImages();
   } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      message: 'Error loading more images!',
-      position: 'topRight',
-    });
+    iziToast.error({ title: 'Error', message: 'Error loading more images!', position: 'topRight' });
   } finally {
     refs.loader.classList.add('hidden');
   }
 });
 
-// Функція для рендеринга зображень
+// Функція рендерингу
 function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
-  gallery.refresh(); // оновлення SimpleLightbox
+  gallery.refresh();
 }
 
-// Функція для перевірки, чи потрібно показувати кнопку "Load more"
+// Функція перевірки кнопки "Load more"
 function checkLoadMoreButtonVisibility() {
   const loadedImages = refs.container.querySelectorAll('.gallery-item').length;
 
   if (loadedImages >= totalHits) {
-    refs.loadMoreBtn.classList.add('hidden'); // ховаємо кнопку "Load more", якщо більше немає результатів
-    iziToast.info({
-      title: 'End of Results',
-      message: "We're sorry, but you've reached the end of search results.",
-      position: 'topRight',
-    });
-  } else if (loadedImages < totalHits && loadedImages % perPage === 0) {
-    refs.loadMoreBtn.classList.remove('hidden'); // показуємо кнопку, якщо є ще результати
+    refs.loadMoreBtn.classList.add('hidden');
+    iziToast.info({ title: 'End of Results', message: "We're sorry, but you've reached the end of search results.", position: 'topRight' });
+  } else {
+    refs.loadMoreBtn.classList.remove('hidden');
   }
 }
 
-// Функція для плавного скролінгу
+// Функція плавного скролу
 function smoothScrollToNextImages() {
   const galleryItem = refs.container.querySelector('.gallery-item');
   if (galleryItem) {
     const { height } = galleryItem.getBoundingClientRect();
-    window.scrollBy({
-      top: height * 2,
-      behavior: 'smooth',
-    });
+    window.scrollBy({ top: height * 2, behavior: 'smooth' });
   }
 }
 
-const gallery = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-});
+const gallery = new SimpleLightbox('.gallery a', { captionsData: 'alt', captionDelay: 250 });
