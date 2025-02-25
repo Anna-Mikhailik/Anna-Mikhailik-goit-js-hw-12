@@ -15,37 +15,45 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0;
+let totalHits = 0; // Загальна кількість зображень
 
-// Обробник сабміту форми
+// Обробник події сабміту форми
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   query = e.target.elements.text.value.trim();
   if (!query) {
-    iziToast.error({ title: 'Error', message: 'Please enter a search query!', position: 'topRight' });
+    iziToast.error({
+      title: 'Error',
+      message: 'Please enter a search query!',
+      position: 'topRight',
+    });
     return;
   }
 
-  refs.container.innerHTML = '';
+  refs.container.innerHTML = ''; // Очищення галереї
   refs.loader.classList.remove('hidden');
-  refs.loadMoreBtn.classList.add('hidden');
+  refs.loadMoreBtn.classList.add('hidden'); // Ховаємо кнопку завантаження
   page = 1;
 
   try {
     const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    totalHits = fetchedTotalHits;
+    totalHits = fetchedTotalHits; // Оновлення загальної кількості результатів
     renderImages(hits);
-    checkLoadMoreButtonVisibility();
+    checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
   } catch (error) {
-    iziToast.error({ title: 'Error', message: 'No images found. Try again!', position: 'topRight' });
+    iziToast.error({
+      title: 'Error',
+      message: 'No images found. Try again!',
+      position: 'topRight',
+    });
   } finally {
     refs.loader.classList.add('hidden');
     e.target.reset();
   }
 });
 
-// Обробник кнопки "Load more"
+// Обробник кліку на кнопку "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
@@ -53,41 +61,55 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   try {
     const { hits } = await fetchImages(query, page, perPage);
     renderImages(hits);
-    checkLoadMoreButtonVisibility();
-    smoothScrollToNextImages();
+    checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
+    smoothScrollToNextImages(); // Плавний скролінг
   } catch (error) {
-    iziToast.error({ title: 'Error', message: 'Error loading more images!', position: 'topRight' });
+    iziToast.error({
+      title: 'Error',
+      message: 'Error loading more images!',
+      position: 'topRight',
+    });
   } finally {
     refs.loader.classList.add('hidden');
   }
 });
 
-// Функція рендерингу
+// Функція рендерингу зображень
 function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
-  gallery.refresh();
+  gallery.refresh(); // Оновлення SimpleLightbox
 }
 
-// Функція перевірки кнопки "Load more"
+// Функція перевірки, чи потрібно показувати кнопку "Load more"
 function checkLoadMoreButtonVisibility() {
   const loadedImages = refs.container.querySelectorAll('.gallery-item').length;
 
   if (loadedImages >= totalHits) {
-    refs.loadMoreBtn.classList.add('hidden');
-    iziToast.info({ title: 'End of Results', message: "We're sorry, but you've reached the end of search results.", position: 'topRight' });
+    refs.loadMoreBtn.classList.add('hidden'); // Ховаємо кнопку "Load more"
+    iziToast.info({
+      title: 'End of Results',
+      message: "We're sorry, but you've reached the end of search results.",
+      position: 'topRight',
+    });
   } else {
-    refs.loadMoreBtn.classList.remove('hidden');
+    refs.loadMoreBtn.classList.remove('hidden'); // Показуємо кнопку, якщо є ще результати
   }
 }
 
-// Функція плавного скролу
+// Функція для плавного скролінгу
 function smoothScrollToNextImages() {
   const galleryItem = refs.container.querySelector('.gallery-item');
   if (galleryItem) {
     const { height } = galleryItem.getBoundingClientRect();
-    window.scrollBy({ top: height * 2, behavior: 'smooth' });
+    window.scrollBy({
+      top: height * 2,
+      behavior: 'smooth',
+    });
   }
 }
 
-const gallery = new SimpleLightbox('.gallery a', { captionsData: 'alt', captionDelay: 250 });
+const gallery = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
