@@ -15,12 +15,10 @@ const refs = {
 let query = '';
 let page = 1;
 const perPage = 40;
-let totalHits = 0; // для збереження загальної кількості результатів
 
-// Обробник для сабміту форми
 refs.form.addEventListener('submit', async (e) => {
   e.preventDefault();
-
+  
   query = e.target.elements.text.value.trim();
   if (!query) {
     iziToast.error({
@@ -31,16 +29,15 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  refs.container.innerHTML = ''; // очищаємо галерею
+  refs.container.innerHTML = '';
   refs.loader.classList.remove('hidden');
-  refs.loadMoreBtn.classList.add('hidden'); // ховаємо кнопку завантаження
+  refs.loadMoreBtn.classList.add('hidden');
   page = 1;
-
+  
   try {
-    const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    totalHits = fetchedTotalHits; // зберігаємо загальну кількість результатів
-    renderImages(hits);
-    checkLoadMoreButtonVisibility(); // перевірка кнопки "Load more"
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length === perPage) refs.loadMoreBtn.classList.remove('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -53,17 +50,14 @@ refs.form.addEventListener('submit', async (e) => {
   }
 });
 
-// Обробник для кліку по кнопці "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
 
   try {
-    const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    totalHits = fetchedTotalHits; // оновлюємо загальну кількість результатів
-    renderImages(hits);
-    checkLoadMoreButtonVisibility(); // перевірка видимості кнопки "Load more"
-    smoothScrollToNextImages(); // Плавна прокрутка
+    const images = await fetchImages(query, page, perPage);
+    renderImages(images);
+    if (images.length < perPage) refs.loadMoreBtn.classList.add('hidden');
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -75,39 +69,10 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   }
 });
 
-// Функція для рендеринга зображень
 function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
-  gallery.refresh(); // оновлення SimpleLightbox
-}
-
-// Функція для перевірки, чи потрібно показувати кнопку "Load more"
-function checkLoadMoreButtonVisibility() {
-  const loadedImages = refs.container.querySelectorAll('.gallery-item').length;
-
-  if (loadedImages >= totalHits) {
-    refs.loadMoreBtn.classList.add('hidden'); // ховаємо кнопку "Load more", якщо більше немає результатів
-    iziToast.info({
-      title: 'End of Results',
-      message: "We're sorry, but you've reached the end of search results.",
-      position: 'topRight',
-    });
-  } else if (loadedImages < totalHits && loadedImages % perPage === 0) {
-    refs.loadMoreBtn.classList.remove('hidden'); // показуємо кнопку, якщо є ще результати
-  }
-}
-
-// Функція для плавного скролінгу
-function smoothScrollToNextImages() {
-  const galleryItem = refs.container.querySelector('.gallery-item');
-  if (galleryItem) {
-    const { height } = galleryItem.getBoundingClientRect();
-    window.scrollBy({
-      top: height * 2,
-      behavior: 'smooth',
-    });
-  }
+  gallery.refresh();
 }
 
 const gallery = new SimpleLightbox('.gallery a', {
