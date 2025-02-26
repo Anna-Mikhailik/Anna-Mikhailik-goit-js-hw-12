@@ -9,16 +9,19 @@ const refs = {
   container: document.querySelector('.gallery'),
   form: document.querySelector('.form'),
   loader: document.querySelector('.loader'),
-  loadMoreBtn: document.querySelector('.load-more'),
+  loadMoreBtn: document.createElement('button'),
 };
+
+refs.loadMoreBtn.textContent = 'Load more';
+refs.loadMoreBtn.classList.add('load-more', 'hidden');
+refs.container.insertAdjacentElement('afterend', refs.loadMoreBtn);
 
 let query = '';
 let page = 1;
 const perPage = 40;
 let totalHits = 0;
 
-// Обробник події сабміту форми
-refs.form.addEventListener('submit', async (e) => {
+refs.form.addEventListener('submit', async e => {
   e.preventDefault();
 
   query = e.target.elements.text.value.trim();
@@ -31,15 +34,18 @@ refs.form.addEventListener('submit', async (e) => {
     return;
   }
 
-  refs.container.innerHTML = ''; // Очищення галереї
-  refs.loader.classList.remove('hidden'); // Показуємо лоадер
-  refs.loadMoreBtn.classList.add('hidden'); // Ховаємо кнопку завантаження
+  refs.container.innerHTML = '';
+  refs.loader.classList.remove('hidden');
+  refs.loadMoreBtn.classList.add('hidden');
   page = 1;
 
   try {
-    const { hits, totalHits: fetchedTotalHits } = await fetchImages(query, page, perPage);
-    
-    totalHits = fetchedTotalHits; // Оновлення загальної кількості результатів
+    const { hits, totalHits: fetchedTotalHits } = await fetchImages(
+      query,
+      page
+    );
+    totalHits = fetchedTotalHits;
+
     if (hits.length === 0) {
       iziToast.error({
         title: 'Error',
@@ -50,8 +56,7 @@ refs.form.addEventListener('submit', async (e) => {
     }
 
     renderImages(hits);
-    checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
-
+    checkLoadMoreButtonVisibility();
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -59,33 +64,20 @@ refs.form.addEventListener('submit', async (e) => {
       position: 'topRight',
     });
   } finally {
-    refs.loader.classList.add('hidden'); // Приховуємо лоадер
+    refs.loader.classList.add('hidden');
     e.target.reset();
   }
 });
 
-// Обробник кліку на кнопку "Load more"
 refs.loadMoreBtn.addEventListener('click', async () => {
   page += 1;
   refs.loader.classList.remove('hidden');
 
   try {
-    const { hits } = await fetchImages(query, page, perPage);
-
-    if (hits.length === 0) {
-      refs.loadMoreBtn.classList.add('hidden');
-      iziToast.info({
-        title: 'End of Results',
-        message: "We're sorry, but you've reached the end of search results.",
-        position: 'topRight',
-      });
-      return;
-    }
-
+    const { hits } = await fetchImages(query, page);
     renderImages(hits);
-    checkLoadMoreButtonVisibility(); // Перевіряємо кнопку "Load more"
-    smoothScrollToNextImages(); // Плавний скролінг
-
+    checkLoadMoreButtonVisibility();
+    smoothScrollToNextImages();
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -97,30 +89,27 @@ refs.loadMoreBtn.addEventListener('click', async () => {
   }
 });
 
-// Функція рендерингу зображень
 function renderImages(items) {
   const markup = imagesTemplate(items);
   refs.container.insertAdjacentHTML('beforeend', markup);
-  gallery.refresh(); // Оновлення SimpleLightbox
+  gallery.refresh();
 }
 
-// Функція перевірки, чи потрібно показувати кнопку "Load more"
 function checkLoadMoreButtonVisibility() {
   const loadedImages = refs.container.querySelectorAll('.gallery-item').length;
 
   if (loadedImages >= totalHits) {
-    refs.loadMoreBtn.classList.add('hidden'); // Ховаємо кнопку "Load more"
+    refs.loadMoreBtn.classList.add('hidden');
     iziToast.info({
       title: 'End of Results',
       message: "We're sorry, but you've reached the end of search results.",
       position: 'topRight',
     });
   } else {
-    refs.loadMoreBtn.classList.remove('hidden'); // Показуємо кнопку, якщо є ще результати
+    refs.loadMoreBtn.classList.remove('hidden');
   }
 }
 
-// Функція для плавного скролінгу
 function smoothScrollToNextImages() {
   const galleryItem = refs.container.querySelector('.gallery-item');
   if (galleryItem) {
@@ -132,7 +121,6 @@ function smoothScrollToNextImages() {
   }
 }
 
-// Налаштування SimpleLightbox
 const gallery = new SimpleLightbox('.gallery a', {
   captionsData: 'alt',
   captionDelay: 250,
